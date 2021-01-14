@@ -12,6 +12,7 @@ class Population:
         self.population = [Snake(self.board_size) for i in range(size)]
         self.pop_fitness = 0
         
+    
     def update_snakes(self):
         for snake in self.population:
             if snake.alive:
