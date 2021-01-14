@@ -1,9 +1,10 @@
 import numpy as np
 from neural_net import NeuralNetwork, NeuralLayer
 
-class Game:
-    def __init__(self, board, brain=None):
-        self.board = np.array(board)
+class Player:
+    def __init__(self, brain=None):
+        self.marker = "X"
+        self.fitness = 0
         if brain == None:
             inputNodes = 9
             hiddenNodes = 7
@@ -11,34 +12,39 @@ class Game:
             self.brain = NeuralNetwork([inputNodes, hiddenNodes, outputNodes])
         else:
             self.brain = brain
-
-    def place(self, marker, position):
-        self.board[position[0]][position[1]] = marker
-
-    def hasWon(self):
-        for row in self.board:
-            if all ([i == 1 for i in row]) or all ([i == 2 for i in row]):
-                return row[0]
-        for col in self.board.T:
-            if all ([i == 1 for i in col]) or all ([i == 2 for i in col]):
-                return col[0]
-        rightDiagonal = [board[0,0], board[1,1], board[2,2]]
-        leftDiagonal = [board[0,2], board[1,1], board[2,0]]
-        if all ([i == 1 in rightDiagonal]) or all ([i == 2 in rightDiagonal]):
-            return rieghtDiagonal[0]
-        if all ([i == 1 in leftDiagonal]) or all ([i == 2 in leftDiagonal]):
-            return leftDiagonal[0]
-        return 0
     
     def think(self):
-        outputs = self.brain.think(self.board.flatten().toList())
-        
+        outputs = self.brain.think(self.board.flatten().tolist())
+
         while True:
             if len(outputs) > 0:
+                #Output gives the marker on position
                 output = self.board[outputs.index(max(outputs))//len(self.board)][outputs.index(max(outputs))%len(self.board)]
                 if output != 0:
                     del outputs[outputs.index(max(outputs))]
                 else:
-                    return output
+                    return [outputs.index(max(outputs))//len(self.board), outputs.index(max(outputs))%len(self.board)]
             else:
                 return "oh noes something went wrong!!!??!?!?!1!!!!11111!?!?!?"
+
+    def calc_fitness(self):
+            #TODO: implement fittness to be if the ai won or not and in how many moves it won?
+            self.fitness = self.lifetime * self.lifetime * 2**math.floor(self.length)
+            self.fitness = self.lifetime + (2**(self.length-5) + ((self.length-5)**2.1)*500) - (((self.length-5)**1.2)*((0.25*self.lifetime)**1.3))
+            self.move_history["fitness"] = self.fitness
+            
+            return self.fitness
+
+    def mutate(self):
+            self.brain.mutate()
+        
+    def crossover(self, other_parent):
+
+        # Create 2 children
+        children_brains = self.brain.crossover(other_parent.brain)
+        children = []
+        
+        for child_brain in children_brains:
+            children.append(Snake(self.board_size, child_brain))
+        
+        return children
