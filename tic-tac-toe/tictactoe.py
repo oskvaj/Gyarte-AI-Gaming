@@ -3,7 +3,8 @@ from neural_net import NeuralNetwork, NeuralLayer
 
 class Player:
     def __init__(self, brain=None):
-        self.marker = "X"
+        self.marker = None
+
         self.fitness = 0
         if brain == None:
             inputNodes = 9
@@ -12,31 +13,50 @@ class Player:
             self.brain = NeuralNetwork([inputNodes, hiddenNodes, outputNodes])
         else:
             self.brain = brain
+
+        self.wins = 0
+        self.draws = 0
+        self.total_matches = 0
     
-    def think(self):
-        outputs = self.brain.think(self.board.flatten().tolist())
+    def think(self, board):
+        outputs = self.brain.think(board.flatten().reshape(1, -1))
 
-        while True:
-            if len(outputs) > 0:
-                #Output gives the marker on position
-                output = self.board[outputs.index(max(outputs))//len(self.board)][outputs.index(max(outputs))%len(self.board)]
-                if output != 0:
-                    del outputs[outputs.index(max(outputs))]
-                else:
-                    return [outputs.index(max(outputs))//len(self.board), outputs.index(max(outputs))%len(self.board)]
-            else:
-                return "oh noes something went wrong!!!??!?!?!1!!!!11111!?!?!?"
+        sorted_outputs = sorted(outputs[0], reverse=True)
 
-    def calc_fitness(self):
-            #TODO: implement fittness to be if the ai won or not and in how many moves it won?
-            self.fitness = self.lifetime * self.lifetime * 2**math.floor(self.length)
-            self.fitness = self.lifetime + (2**(self.length-5) + ((self.length-5)**2.1)*500) - (((self.length-5)**1.2)*((0.25*self.lifetime)**1.3))
-            self.move_history["fitness"] = self.fitness
+        outputs = outputs.reshape(3, 3)
+        tried_positions = []
+
+        for output in sorted_outputs:
             
-            return self.fitness
+            indexes_of_highest_value = np.asarray(np.where(outputs==output)).T
+            index = indexes_of_highest_value[0]
+
+            indexes_tried = 0
+            if len(tried_positions) > 0:
+                for pos in tried_positions:
+                    if all(index == pos):
+                        index = indexes_of_highest_value[indexes_tried+1]
+                        indexes_tried += 1
+
+            marker_on_position = board[index[0], index[1]]
+
+            if marker_on_position != 0:
+                # Spot is already occupied
+                # Check next highest choice
+                tried_positions.append(index)
+                continue
+            else:
+                # Return the index of the highest value adjusted for the board shape
+                return index
+            
+        # If there are no legal moves left, return None
+        # The script should never reach this point due to the order in which draws are checked.
+        if len(tried_positions) >= board.size:
+            return None
+
 
     def mutate(self):
-            self.brain.mutate()
+        self.brain.mutate()
         
     def crossover(self, other_parent):
 
@@ -45,6 +65,6 @@ class Player:
         children = []
         
         for child_brain in children_brains:
-            children.append(Snake(self.board_size, child_brain))
+            children.append(Player(child_brain))
         
         return children

@@ -1,6 +1,7 @@
 from numpy import exp, random, dot, concatenate, reshape, tanh
 import numpy as np
 generator = random.default_rng()
+
 from sklearn import preprocessing
 scaler = preprocessing.StandardScaler()
 

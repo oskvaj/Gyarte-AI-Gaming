@@ -2,17 +2,31 @@ from tictactoe import Player
 from match import Match
 from numpy import random, array
 generator = random.default_rng()
+import itertools
 
-class population():
-    def __init__(self, popSize, spread, size):
+class Population():
+    def __init__(self, popSize, spread):
         self.popSize = popSize
         self.count = 0
         self.spread = spread
 
-        self.population = [Match([[0, 0, 0], [0, 0, 0], [0, 0, 0]], [Player(), Player()]) for i in range(popSize)]
-        self.popFitness =1 
+        #self.population = [Match([[0, 0, 0], [0, 0, 0], [0, 0, 0]], [Player(1), Player(2)]) for i in range(popSize)]
+        self.population = [Player() for i in range(popSize)]
 
-    def Natural_selection(self):
+        self.popFitness = 1
+
+
+    def play(self):
+        all_pairs = itertools.combinations(self.population, 2)
+        for pair in all_pairs:
+            # Total matches is purely for data
+            pair[0].total_matches += 1
+            pair[1].total_matches += 1
+
+            match = Match([pair[0], pair[1]])
+            match.play()
+            
+    def natural_selection(self):
         new_players = []
 
         # First child of new array is the best player of previous generation without mutation
@@ -51,7 +65,7 @@ class population():
         for player in self.population:
             if player.alive:
                 return True
-        return False    
+        return False
 
     def select_mating_pool(self, num_of_parents):
         
@@ -70,10 +84,7 @@ class population():
 
 
     def select_player(self):
-
-
-
-        # Select a random plaeyr from the amount of fitness from each player
+        # Select a random player from the amount of fitness from each player
         # Since fitness is exponential it will pick the ones with higher fitness more often than not
         # Creates genetic diversity
 
@@ -83,13 +94,18 @@ class population():
 
         for player in self.population:
             runningSum += player.fitness
-            if rand <=runningSum:
+            if rand <= runningSum:
                 return player
-        
+
+    def is_done(self):
+        if all(match.is_done for match in self.population):
+            return True
+
 
     def get_random_player(self):
         return self.population[random.randint(0, len(self.population))]
-    
+
+
     def select_best_player(self):
         best_player = self.population[0]
 
@@ -97,7 +113,8 @@ class population():
             if player.fitness > best_player.fitness:
                 best_player = player
         return best_player
-    
+
+
     def average_fitness(self):
         total = 0
         for player in self.population:
